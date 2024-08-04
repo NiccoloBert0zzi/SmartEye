@@ -12,11 +12,11 @@ class FingerDraw(Module):
         self.detector = detector
 
     def run(self, img, **kwargs):
-        img = self.detector.findHands(img)
-        n_fingers, index_fingers = self.detector.fingersUp()
+        img = self.detector.find_hands(img)
+        n_fingers, index_fingers = self.detector.fingers_up()
 
         if n_fingers == 1:
-            position = self.detector.getFingerPosition(img, index_fingers[0])
+            position = self.detector.get_finger_position(img, index_fingers[0])
             if position is not None:
                 x1, y1 = position
                 if self.xp == 0 and self.yp == 0:
@@ -24,7 +24,7 @@ class FingerDraw(Module):
                 cv2.line(self.img_canvas, (self.xp, self.yp), (x1, y1), (255, 0, 255), 15)
                 self.xp, self.yp = x1, y1
         elif n_fingers == 4:  # Modalità gomma attivata
-            position = self.detector.getFingerPosition(img, index_fingers[0])
+            position = self.detector.get_finger_position(img, index_fingers[0])
             if position is not None:
                 x1, y1 = position
                 cv2.circle(self.img_canvas, (x1, y1), 30, (0, 0, 0), -1)  # Cancella con un cerchio nero

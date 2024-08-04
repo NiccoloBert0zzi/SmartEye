@@ -46,7 +46,7 @@ def main():
     pygame.display.set_caption("SmartEye")
 
     manager = ModuleManager()
-    detector = HandTrackingModule.handDetector(detectionCon=0.65, maxHands=1)
+    detector = HandTrackingModule.HandDetector(detection_con=0.65, max_hands=1)
 
     active_module = initialize_modules(manager, img, detector)
 
@@ -56,7 +56,7 @@ def main():
             continue
 
         # img = calibrate_image(img, width, height)
-        hand_img = detector.findHands(img)
+        hand_img = detector.find_hands(img, draw=False)
         fingers = detector.find_all_positions(hand_img, fingers=[(8, True), (4, True)])
         # Flip the image vertically
         img = cv2.flip(img, 1)
@@ -80,7 +80,7 @@ def main():
             active_module.draw(screen)
 
         # Draw fingers 8 and 4
-        detector.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
+        HandTrackingModule.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
 
         # Display the Pygame window
         pygame.display.update()
