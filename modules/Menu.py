@@ -2,6 +2,7 @@ import pygame
 import math
 import time
 
+from controllers.HandGestureController import HandGestureController
 from modules.IModule import Module
 
 NAVY_BLUE = (20, 20, 40)
@@ -17,7 +18,17 @@ class Menu(Module):
         pygame.init()
 
     def run(self, img, **kwargs):
-        pass
+        fingers = kwargs.get('fingers', [])
+        for index, circle in enumerate(self.circles):
+            for finger in fingers:
+                if HandGestureController.is_finger_touching_circle(finger, circle):
+                    if circle.click_start_time is None:
+                        circle.click_start_time = time.time()
+                    elif time.time() - circle.click_start_time >= 2:
+                        return index, circle.text
+                else:
+                    circle.click_start_time = None
+        return None, None
 
     def draw(self, screen, **kwargs):
         for circle in self.circles:
@@ -68,6 +79,7 @@ class AppCircle:
         self.animation_start_time = time.time()
         self.is_animating = False
         self.image = None
+        self.click_start_time = None
 
     def draw(self, screen):
         if self.is_hovered_flag:

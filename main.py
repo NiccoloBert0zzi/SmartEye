@@ -42,7 +42,7 @@ def initialize_modules(manager, img, detector):
 def main():
     cap = cv2.VideoCapture(0)
     _, img = cap.read()
-    # img = calibrate_image(img, width, height)
+    img = calibrate_image(img, 1920, 1080)
     pygame.display.set_caption("SmartEye")
 
     manager = ModuleManager()
@@ -55,11 +55,21 @@ def main():
         if not success:
             continue
 
-        # img = calibrate_image(img, width, height)
+        img = calibrate_image(img, 1920, 1080)
         hand_img = detector.find_hands(img, draw=False)
         fingers = detector.find_all_positions(hand_img, fingers=[(8, True), (4, True)])
         # Flip the image vertically
         img = cv2.flip(img, 1)
+
+        # if active_module:
+        #     screen.fill((0, 0, 0))
+        #     if active_module.get_module_name() == 'Menu':
+        #         index, text = active_module.run(img, fingers=fingers)
+        #         if index is not None:
+        #             active_module = manager.modules[index]
+        #     else:
+        #         active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
+        #     active_module.draw(screen)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('1'):
@@ -89,8 +99,6 @@ def main():
 
         # Show the OpenCV window with the camera feed
         cv2.imshow("Camera Feed", img)
-        if key == ord('q'):
-            break
 
     manager.destroy_all()
     pygame.quit()

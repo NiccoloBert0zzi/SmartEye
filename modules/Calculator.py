@@ -1,7 +1,7 @@
 from modules.IModule import Module
 from geometry.Geometry import Geometry
 
-from controllers.HandTrackingController import HandTrackingController
+from controllers.HandGestureController import HandGestureController
 
 SCREEN_SIZE = (1920, 1080)
 LIGHT_BLUE = (173, 216, 230)
@@ -65,7 +65,7 @@ class Calculator(Module):
 
     def run(self, img, **kwargs):
         fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
-        clicking, click_index = HandTrackingController.check_if_click(fingers, self.buttons)
+        clicking, click_index = HandGestureController.check_if_click(fingers, self.buttons)
         if clicking:
             if self.buttons[click_index]["key"] == "AC":
                 self.buttons[-1]["text"] = ""
@@ -75,8 +75,9 @@ class Calculator(Module):
             else:
                 # Calculate the result
                 try:
+                    # Evaluate only if the expression is valid
                     self.buttons[-1]["text"] = str(eval(self.buttons[-1]["text"]))
-                except (SyntaxError, ZeroDivisionError):
+                except (SyntaxError, ZeroDivisionError, NameError):
                     self.buttons[-1]["text"] = "Error"
 
     def draw(self, screen, **kwargs):

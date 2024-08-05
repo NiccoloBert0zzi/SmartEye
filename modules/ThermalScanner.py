@@ -23,6 +23,9 @@ class ThermalScanner(Module):
         self.img = self.apply_palette(palette)
 
     def draw(self, screen, **kwargs):
+        if self.img is None:
+            return screen  # Skip drawing if self.img is not set
+
         # Convert the OpenCV image to a Pygame surface
         img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
         img_surface = pygame.surfarray.make_surface(np.rot90(img_rgb))
