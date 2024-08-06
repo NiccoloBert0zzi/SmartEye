@@ -87,19 +87,16 @@ class Measure(Module):
             d_wd = obj["width"]
             d_ht = obj["height"]
 
-            # Define the margin
-            margin = 20
-
-            # Calculate the points for the width line with margin
-            p1 = (int(box[0][0] - margin), int(box[0][1] - margin))
-            p2 = (int(box[1][0] + margin), int(box[1][1] - margin))
+            # Calculate the points for the width line
+            p1 = (int(box[0][0]), int(box[0][1]))
+            p2 = (int(box[1][0]), int(box[1][1]))
 
             # Draw a line for the width with arrow
             pygame.draw.line(screen, (255, 255, 255), p2, p1, 2)
 
-            # Calculate the points for the height line with margin
-            p3 = (int(box[1][0] + margin), int(box[1][1] - margin))
-            p4 = (int(box[2][0] + margin), int(box[2][1] + margin))
+            # Calculate the points for the height line
+            p3 = (int(box[1][0]), int(box[1][1]))
+            p4 = (int(box[2][0]), int(box[2][1]))
 
             # Draw a line for the height with arrow
             pygame.draw.line(screen, (255, 255, 255), p3, p4, 2)

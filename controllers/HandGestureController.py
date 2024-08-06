@@ -42,8 +42,14 @@ class HandGestureController:
         return False, None
 
     @staticmethod
-    def is_finger_touching_circle(finger, circle):
-        finger_x, finger_y = finger[1:]
-        circle_x, circle_y = circle.center
-        distance = math.hypot(finger_x - circle_x, finger_y - circle_y)
-        return distance < circle.radius
+    def is_finger_touching_circle(fingers, circle):
+        finger1, finger2 = fingers
+        if HandGestureController.is_touch(finger1, finger2):
+            finger1_x, finger1_y = finger1[1:]
+            finger2_x, finger2_y = finger2[1:]
+            midpoint_x = (finger1_x + finger2_x) / 2
+            midpoint_y = (finger1_y + finger2_y) / 2
+            circle_x, circle_y = circle.center
+            distance = math.hypot(midpoint_x - circle_x, midpoint_y - circle_y)
+            return distance < circle.radius
+        return False

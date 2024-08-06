@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import pygame
 import numpy as np
@@ -17,7 +19,7 @@ M = np.load("calibration/M.npy")
 
 def calibrate_image(frame, width, height):
     warped_image = cv2.warpPerspective(frame, M, (width, height))
-    return cv2.cvtColor(warped_image, cv2.COLOR_BGR2RGB)
+    return warped_image
 
 
 def initialize_modules(manager, img, detector):
@@ -40,7 +42,7 @@ def initialize_modules(manager, img, detector):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     _, img = cap.read()
     img = calibrate_image(img, 1920, 1080)
     pygame.display.set_caption("SmartEye")
@@ -50,6 +52,9 @@ def main():
 
     active_module = initialize_modules(manager, img, detector)
 
+    # Set up a clock to limit the frame rate
+    clock = pygame.time.Clock()
+
     while True:
         success, img = cap.read()
         if not success:
@@ -58,47 +63,27 @@ def main():
         img = calibrate_image(img, 1920, 1080)
         hand_img = detector.find_hands(img, draw=False)
         fingers = detector.find_all_positions(hand_img, fingers=[(8, True), (4, True)])
-        # Flip the image vertically
-        img = cv2.flip(img, 1)
-
-        # if active_module:
-        #     screen.fill((0, 0, 0))
-        #     if active_module.get_module_name() == 'Menu':
-        #         index, text = active_module.run(img, fingers=fingers)
-        #         if index is not None:
-        #             active_module = manager.modules[index]
-        #     else:
-        #         active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
-        #     active_module.draw(screen)
-
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('1'):
-            active_module = manager.modules[0]
-        elif key == ord('2'):
-            active_module = manager.modules[1]
-        elif key == ord('3'):
-            active_module = manager.modules[2]
-        elif key == ord('4'):
-            active_module = manager.modules[3]
-        elif key == ord('5'):
-            active_module = manager.modules[4]
 
         if active_module:
             screen.fill((0, 0, 0))
-
-            active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
+            if active_module.get_module_name() == 'Menu':
+                index, text = active_module.run(img, fingers=fingers)
+                if index is not None:
+                    active_module = manager.modules[index]
+            else:
+                active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
             active_module.draw(screen)
 
         # Draw fingers 8 and 4
-        HandTrackingModule.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
+        if fingers:
+            HandTrackingModule.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
 
         # Display the Pygame window
         pygame.display.update()
         pygame.display.flip()
-        pygame.time.delay(50)
 
-        # Show the OpenCV window with the camera feed
-        cv2.imshow("Camera Feed", img)
+        # Limit the frame rate to 30 FPS
+        clock.tick(30)
 
     manager.destroy_all()
     pygame.quit()
@@ -107,7 +92,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # os.environ['SDL_VIDEO_WINDOW_POS'] = '-3440,0'
+    os.environ['SDL_VIDEO_WINDOW_POS'] = '1920,0'
     screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
     pygame.display.set_caption('Home Screen')
     main()

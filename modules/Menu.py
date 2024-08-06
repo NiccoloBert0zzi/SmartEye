@@ -19,15 +19,16 @@ class Menu(Module):
 
     def run(self, img, **kwargs):
         fingers = kwargs.get('fingers', [])
+        if not fingers:
+            return None, None
         for index, circle in enumerate(self.circles):
-            for finger in fingers:
-                if HandGestureController.is_finger_touching_circle(finger, circle):
-                    if circle.click_start_time is None:
-                        circle.click_start_time = time.time()
-                    elif time.time() - circle.click_start_time >= 2:
-                        return index, circle.text
-                else:
-                    circle.click_start_time = None
+            if HandGestureController.is_finger_touching_circle(fingers, circle):
+                if circle.click_start_time is None:
+                    circle.click_start_time = time.time()
+                elif time.time() - circle.click_start_time >= 2:
+                    return index, circle.text
+            else:
+                circle.click_start_time = None
         return None, None
 
     def draw(self, screen, **kwargs):
@@ -46,6 +47,13 @@ class Menu(Module):
         app_circle_radius = 75
         distance = 250
 
+        angle_step = 360 / self.num_circles
+        for i in range(self.num_circles):
+            angle = math.radians(angle_step * i)
+            x = center_x + int(distance * math.cos(angle))
+            y = center_y + int(distance * math.sin(angle))
+            circles.append(AppCircle((center_x, center_y), app_circle_radius, modules[i], (x, y), is_visible=True))
+
         main_circle = AppCircle((center_x, center_y),
                                 main_circle_radius,
                                 self.get_module_name(),
@@ -53,13 +61,6 @@ class Menu(Module):
                                 is_main=True,
                                 is_visible=True)
         circles.append(main_circle)
-
-        angle_step = 360 / self.num_circles
-        for i in range(self.num_circles):
-            angle = math.radians(angle_step * i)
-            x = center_x + int(distance * math.cos(angle))
-            y = center_y + int(distance * math.sin(angle))
-            circles.append(AppCircle((center_x, center_y), app_circle_radius, modules[i], (x, y), is_visible=True))
         return circles
 
     def get_module_name(self):

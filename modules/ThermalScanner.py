@@ -26,8 +26,11 @@ class ThermalScanner(Module):
         if self.img is None:
             return screen  # Skip drawing if self.img is not set
 
+        # Flip the image vertically
+        flipped_img = cv2.flip(self.img, 1)
+
         # Convert the OpenCV image to a Pygame surface
-        img_rgb = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
+        img_rgb = cv2.cvtColor(flipped_img, cv2.COLOR_BGR2RGB)
         img_surface = pygame.surfarray.make_surface(np.rot90(img_rgb))
 
         # Blit the Pygame surface onto the screen

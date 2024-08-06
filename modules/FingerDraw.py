@@ -1,15 +1,14 @@
 from modules.IModule import Module
-import cv2
-import numpy as np
 import pygame
 
 
 class FingerDraw(Module):
     def __init__(self, img, detector):
         h, w, c = img.shape
-        self.img_canvas = np.zeros((h, w, c), np.uint8)
+        self.img_canvas = pygame.Surface((w, h), pygame.SRCALPHA)
         self.yp, self.xp = 0, 0
         self.detector = detector
+        self.draw_commands = []
 
     def run(self, img, **kwargs):
         img = self.detector.find_hands(img)
@@ -21,23 +20,24 @@ class FingerDraw(Module):
                 x1, y1 = position
                 if self.xp == 0 and self.yp == 0:
                     self.xp, self.yp = x1, y1
-                cv2.line(self.img_canvas, (self.xp, self.yp), (x1, y1), (255, 0, 255), 15)
+                self.draw_commands.append(('line', (self.xp, self.yp), (x1, y1), (255, 0, 255), 15))
                 self.xp, self.yp = x1, y1
         elif n_fingers == 4:  # Modalità gomma attivata
             position = self.detector.get_finger_position(img, index_fingers[0])
             if position is not None:
                 x1, y1 = position
-                cv2.circle(self.img_canvas, (x1, y1), 30, (0, 0, 0), -1)  # Cancella con un cerchio nero
+                self.draw_commands.append(('circle', (x1, y1), 30, (0, 0, 0), -1))
         else:
             self.xp, self.yp = 0, 0  # Resetta la posizione se nessun dito o più di due dita sono alzate
 
     def draw(self, screen, **kwargs):
-        # Convert the OpenCV image to a Pygame surface
-        img_rgb = cv2.cvtColor(self.img_canvas, cv2.COLOR_BGR2RGB)
-        img_surface = pygame.surfarray.make_surface(np.rot90(img_rgb))
+        for command in self.draw_commands:
+            if command[0] == 'line':
+                pygame.draw.line(self.img_canvas, command[3], command[1], command[2], command[4])
+            elif command[0] == 'circle':
+                pygame.draw.circle(self.img_canvas, command[3], command[1], command[2])
 
-        # Blit the Pygame surface onto the screen
-        screen.blit(img_surface, (0, 0))
+        screen.blit(self.img_canvas, (0, 0))
         return screen
 
     def destroy(self, **kwargs):
