@@ -12,6 +12,7 @@ from modules.ObjectRecognition import ObjectRecognition
 from modules.Measure import Measure
 from modules.Calculator import Calculator
 from modules.Menu import Menu
+from modules.SpaceInvader import SpaceInvader
 
 # read in M
 M = np.load("calibration/M.npy")
@@ -23,17 +24,13 @@ def calibrate_image(frame, width, height):
 
 
 def initialize_modules(manager, img, detector):
-    finger_draw = FingerDraw(img, detector)
-    thermal_scanner = ThermalScanner()
-    object_recognition = ObjectRecognition()
-    measure = Measure()
-    calculator = Calculator(detector)
 
-    manager.add_module(finger_draw)
-    manager.add_module(thermal_scanner)
-    manager.add_module(object_recognition)
-    manager.add_module(measure)
-    manager.add_module(calculator)
+    manager.add_module(FingerDraw(img, detector))
+    manager.add_module(ThermalScanner())
+    manager.add_module(ObjectRecognition())
+    manager.add_module(Measure())
+    manager.add_module(Calculator(detector))
+    manager.add_module(SpaceInvader(1920, 1080))
 
     menu = Menu(initial_radius=100, modules=manager.get_modules_name())
     manager.add_module(menu)
@@ -42,7 +39,7 @@ def initialize_modules(manager, img, detector):
 
 
 def main():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     _, img = cap.read()
     img = calibrate_image(img, 1920, 1080)
     pygame.display.set_caption("SmartEye")
@@ -65,7 +62,7 @@ def main():
         fingers = detector.find_all_positions(hand_img, fingers=[(8, True), (4, True)])
 
         if active_module:
-            screen.fill((0, 0, 0))
+            screen.fill((30, 30, 30))
             if active_module.get_module_name() == 'Menu':
                 index, text = active_module.run(img, fingers=fingers)
                 if index is not None:
@@ -93,6 +90,7 @@ def main():
 
 if __name__ == "__main__":
     os.environ['SDL_VIDEO_WINDOW_POS'] = '1920,0'
+    pygame.init()
     screen = pygame.display.set_mode((0, 0), pygame.RESIZABLE)
     pygame.display.set_caption('Home Screen')
     main()

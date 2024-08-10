@@ -12,7 +12,7 @@ hands = mp_hands.Hands(static_image_mode=False,
 mp_drawing = mp.solutions.drawing_utils
 
 # Camera capture setup
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # Projector width and height
 width, height = 1920, 1060
