@@ -5,12 +5,14 @@ import data.entities.Obstacle as Obstacle
 from data.entities import Alien
 from random import choice, randint
 from data.entities import Laser
+from geometry.Geometry import Geometry
 from modules.IModule import Module
 
 
 class SpaceInvader(Module):
     def __init__(self, width, height):
         margin_percentage = 0.3  # 10% margin on each side
+        self.screen_original_width = width
         self.screen_width = width * (1 - 2 * margin_percentage)
         self.screen_height = height
         self.margin_x = width * margin_percentage
@@ -43,9 +45,9 @@ class SpaceInvader(Module):
         self.extra = pygame.sprite.GroupSingle()
         self.extra_spawn_time = randint(40, 80)
 
-        music = pygame.mixer.Sound('audio/music.wav')
-        music.set_volume(0.2)
-        music.play(loops=-1)
+        self.music = pygame.mixer.Sound('audio/music.wav')
+        self.music.set_volume(0.2)
+
         self.laser_sound = pygame.mixer.Sound('audio/laser.wav')
         self.laser_sound.set_volume(0.5)
         self.explosion_sound = pygame.mixer.Sound('audio/explosion.wav')
@@ -56,6 +58,43 @@ class SpaceInvader(Module):
 
         # CRT
         self.crt = CRT(width, height)
+
+        # Initialize buttons
+        self.buttons = self.create_buttons()
+
+    def create_buttons(self):
+        button_width = 150
+        button_height = 70
+        margin = 30
+
+        vertical_center = (self.screen_height - button_height) // 2
+
+        # Calculate horizontal center position for the left and right buttons
+        lateral_space = (self.screen_original_width - self.screen_width) // 2
+        horizontal_center_left = (lateral_space - button_width) // 2
+        horizontal_center_right = self.screen_original_width - lateral_space + (lateral_space - button_width) // 2
+
+        buttons = [
+            {
+                "top_left": (horizontal_center_left, vertical_center),
+                "bottom_right": (horizontal_center_left + button_width, vertical_center + button_height),
+                "text": "Spara",
+                "key": "shoot"
+            },
+            {
+                "top_left": (horizontal_center_right, vertical_center),
+                "bottom_right": (horizontal_center_right + button_width, vertical_center + button_height),
+                "text": "<",
+                "key": "left"
+            },
+            {
+                "top_left": (horizontal_center_right + button_width + margin, vertical_center),
+                "bottom_right": (horizontal_center_right + 2 * button_width + margin, vertical_center + button_height),
+                "text": ">",
+                "key": "right"
+            }
+        ]
+        return buttons
 
     def create_obstacle(self, x_start, y_start, offset_x):
         for row_index, row in enumerate(self.shape):
@@ -160,20 +199,29 @@ class SpaceInvader(Module):
             screen.blit(victory_surf, victory_rect)
 
     def run(self, image_data, **kwargs):
+        fingers = kwargs.get('fingers', [])
         if not self.alien_laser_initialized:
+            self.music.play(loops=-1)
             pygame.time.set_timer(self.alien_laser_event, 1000)
             self.alien_laser_initialized = True
 
         for event in pygame.event.get():
             if event.type == self.alien_laser_event:
                 self.alien_shoot()
-        self.player.update()
+        self.player.update(fingers, self.buttons)
         self.alien_lasers.update()
         self.extra.update()
 
         self.aliens.update(self.alien_direction)
         self.alien_position_checker()
         self.collision_checks()
+
+    def draw_buttons(self, screen):
+        for button in self.buttons:
+            Geometry.draw_square_with_text(screen,
+                                           button["top_left"],
+                                           button["bottom_right"],
+                                           button["text"])
 
     def draw(self, screen, **kwargs):
         self.player.sprite.lasers.draw(screen)
@@ -184,6 +232,7 @@ class SpaceInvader(Module):
         self.display_lives(screen)
         self.display_score(screen)
         self.check_victory(screen)
+        self.draw_buttons(screen)
 
         self.crt.draw(screen)
 

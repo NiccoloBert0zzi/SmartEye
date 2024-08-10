@@ -1,4 +1,6 @@
 import pygame
+
+from controllers.HandGestureController import HandGestureController
 from data.entities import Laser
 
 
@@ -19,19 +21,20 @@ class Player(pygame.sprite.Sprite):
         self.laser_sound = pygame.mixer.Sound('audio/laser.wav')
         self.laser_sound.set_volume(0.5)
 
-    def get_input(self):
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed
-        elif keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed
-
-        if keys[pygame.K_SPACE] and self.ready:
-            self.shoot_laser()
-            self.ready = False
-            self.laser_time = pygame.time.get_ticks()
-            self.laser_sound.play()
+    def get_input(self, fingers, buttons):
+        if not fingers:
+            return None, None
+        clicking, click_index = HandGestureController.check_if_click(fingers, buttons)
+        if clicking:
+            if buttons[click_index]["key"] == ">":
+                self.rect.x += self.speed
+            elif buttons[click_index]["key"] == "<":
+                self.rect.x -= self.speed
+            elif buttons[click_index]["key"] == "shoot" and self.ready:
+                self.shoot_laser()
+                self.ready = False
+                self.laser_time = pygame.time.get_ticks()
+                self.laser_sound.play()
 
     def recharge(self):
         if not self.ready:
@@ -48,8 +51,8 @@ class Player(pygame.sprite.Sprite):
     def shoot_laser(self):
         self.lasers.add(Laser.Laser(self.rect.center, -8, self.rect.bottom))
 
-    def update(self):
-        self.get_input()
+    def update(self, fingers, buttons):
+        self.get_input(fingers, buttons)
         self.constraint()
         self.recharge()
         self.lasers.update()

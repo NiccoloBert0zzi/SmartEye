@@ -63,7 +63,8 @@ def main():
 
         if active_module:
             screen.fill((30, 30, 30))
-            if active_module.get_module_name() == 'Menu':
+            if (active_module.get_module_name() == 'Menu' or
+                    active_module.get_module_name() == 'SpaceInvader'):
                 index, text = active_module.run(img, fingers=fingers)
                 if index is not None:
                     active_module = manager.modules[index]
