@@ -39,7 +39,7 @@ def initialize_modules(manager, img, detector):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     _, img = cap.read()
     img = calibrate_image(img, 1920, 1080)
     pygame.display.set_caption("SmartEye")

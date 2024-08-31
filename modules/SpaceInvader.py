@@ -72,7 +72,6 @@ class SpaceInvader(Module):
         # Calculate horizontal center position for the left and right buttons
         lateral_space = (self.screen_original_width - self.screen_width) // 2
         horizontal_center_left = (lateral_space - button_width) // 2
-        horizontal_center_right = self.screen_original_width - lateral_space + (lateral_space - button_width) // 2
 
         buttons = [
             {
@@ -80,18 +79,6 @@ class SpaceInvader(Module):
                 "bottom_right": (horizontal_center_left + button_width, vertical_center + button_height),
                 "text": "Spara",
                 "key": "shoot"
-            },
-            {
-                "top_left": (horizontal_center_right, vertical_center),
-                "bottom_right": (horizontal_center_right + button_width, vertical_center + button_height),
-                "text": "<",
-                "key": "left"
-            },
-            {
-                "top_left": (horizontal_center_right + button_width + margin, vertical_center),
-                "bottom_right": (horizontal_center_right + 2 * button_width + margin, vertical_center + button_height),
-                "text": ">",
-                "key": "right"
             }
         ]
         return buttons
@@ -208,7 +195,7 @@ class SpaceInvader(Module):
         for event in pygame.event.get():
             if event.type == self.alien_laser_event:
                 self.alien_shoot()
-        self.player.update(fingers, self.buttons)
+        self.player.update(fingers)
         self.alien_lasers.update()
         self.extra.update()
 
