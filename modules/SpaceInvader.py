@@ -17,14 +17,17 @@ class SpaceInvader(Module):
         self.screen_height = height
         self.margin_x = width * margin_percentage
 
-        player_sprite = Player.Player((self.screen_width / 2 + self.margin_x, self.screen_height),
+        # Adjust player position to be closer to the bottom
+        player_sprite = Player.Player((self.screen_width / 2 + self.margin_x, self.screen_height - 50),
                                       self.screen_width,
                                       5, self.margin_x)
         self.player = pygame.sprite.GroupSingle(player_sprite)
 
         self.lives = 4
         self.live_surf = pygame.image.load('ui/graphics/heart.png').convert_alpha()
+        # Adjust lives display position to be closer to the bottom
         self.live_x_start_pos = self.screen_width - (self.live_surf.get_size()[0] * 2 + 20) + self.margin_x
+        self.live_y_pos = self.screen_height - self.live_surf.get_size()[1] - 10
         self.score = 0
         self.font = pygame.font.Font('ui/font/Pixeled.ttf', 20)
 
@@ -172,11 +175,12 @@ class SpaceInvader(Module):
     def display_lives(self, screen):
         for live in range(self.lives - 1):
             x = self.live_x_start_pos + (live * (self.live_surf.get_size()[0] + 10))
-            screen.blit(self.live_surf, (x, 8))
+            screen.blit(self.live_surf, (x, self.live_y_pos))
 
     def display_score(self, screen):
+        # Adjust score display position to be closer to the center
         score_surf = self.font.render(f'score: {self.score}', False, 'white')
-        score_rect = score_surf.get_rect(topleft=(10, -10))
+        score_rect = score_surf.get_rect(center=(self.screen_width / 2, 20))
         screen.blit(score_surf, score_rect)
 
     def check_victory(self, screen):

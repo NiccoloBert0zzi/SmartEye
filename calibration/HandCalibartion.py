@@ -4,6 +4,7 @@ import mediapipe as mp
 
 # Initialize mediapipe
 mp_hands = mp.solutions.hands
+
 hands = mp_hands.Hands(static_image_mode=False,
                        max_num_hands=1,  # Assuming you touch the target with one hand
                        min_detection_confidence=0.5,

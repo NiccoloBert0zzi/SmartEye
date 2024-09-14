@@ -20,7 +20,9 @@ M = np.load("calibration/M.npy")
 
 def calibrate_image(frame, width, height):
     warped_image = cv2.warpPerspective(frame, M, (width, height))
-    return warped_image
+
+    flipped_image = cv2.flip(warped_image, -1)
+    return flipped_image
 
 
 def initialize_modules(manager, img, detector):
@@ -70,15 +72,21 @@ def main():
                     active_module = manager.modules[index]
             else:
                 active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
-            active_module.draw(screen)
+            if active_module.get_module_name() == 'Object Recognition':
+                active_module.draw(img, screen)
+            else:
+                active_module.draw(screen)
 
         # Draw fingers 8 and 4
         if fingers:
             HandTrackingModule.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
 
+        # Flip the screen content horizontally before displaying
+        flipped_screen = pygame.transform.flip(screen, True, True)
+        pygame.display.get_surface().blit(flipped_screen, (0, 0))
+
         # Display the Pygame window
         pygame.display.update()
-        pygame.display.flip()
 
         # Limit the frame rate to 30 FPS
         clock.tick(30)

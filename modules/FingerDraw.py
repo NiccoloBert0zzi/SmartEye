@@ -13,7 +13,7 @@ class FingerDraw(Module):
         self.eraser_color = (30, 30, 30)  # Eraser color matches the background
         self.color_buttons = [
             {"color": (255, 0, 255), "pos": (w // 2 - 120, 50), "radius": 20},  # Fuchsia
-            {"color": (255, 255, 0), "pos": (w // 2, 350), "radius": 20},  # Yellow
+            {"color": (255, 255, 0), "pos": (w // 2, 50), "radius": 20},  # Yellow
             {"color": (0, 255, 255), "pos": (w // 2 + 120, 50), "radius": 20}  # Cyan
         ]
 

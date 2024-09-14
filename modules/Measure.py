@@ -10,11 +10,12 @@ from modules.IModule import Module
 
 def find_aruco_markers(img, marker_size=5, total_markers=50):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    key = getattr(cv2.aruco, f'DICT_{marker_size}X{marker_size}_{total_markers}')
 
+    key = getattr(cv2.aruco, f'DICT_{marker_size}X{marker_size}_{total_markers}')
     aruco_dict = cv2.aruco.getPredefinedDictionary(key)
     aruco_param = cv2.aruco.DetectorParameters()
     bbox, ids, rejected = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_param)
+
     return bbox, ids, rejected
 
 
