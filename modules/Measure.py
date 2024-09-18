@@ -6,6 +6,7 @@ import cv2
 import pygame
 
 from modules.IModule import Module
+from controllers.HandGestureController import HandGestureController
 
 
 def find_aruco_markers(img, marker_size=5, total_markers=50):
@@ -20,15 +21,34 @@ def find_aruco_markers(img, marker_size=5, total_markers=50):
 
 
 class Measure(Module):
-    def __init__(self):
+    def __init__(self, detector):
         self.objects = []
         self.is_analyzing = False
+        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.module_finished = False
+        self.detector = detector
 
     def run(self, img, **kwargs):
+        self.module_finished = False
+        img = self.detector.find_hands(img)
+
+        fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
+        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
+        if clicking:
+            self.module_finished = True
+
         self.analyze_image(img)
 
     def draw(self, screen, **kwargs):
         self.draw_results(screen)
+
+        # Draw menu button
+        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
+        font = pygame.font.Font(None, 32)
+        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=self.menu_button["center"])
+        screen.blit(text_surface, text_rect)
+
         return screen
 
     def destroy(self, **kwargs):
@@ -46,41 +66,42 @@ class Measure(Module):
 
         contours_find = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours_find = imutils.grab_contours(contours_find)
-        (contours_find, _) = contours.sort_contours(contours_find)
+        if contours_find:
+            (contours_find, _) = contours.sort_contours(contours_find)
 
-        aruco_found = find_aruco_markers(image, total_markers=50)
-        if len(aruco_found[0]) != 0:
-            aruco_perimeter = cv2.arcLength(aruco_found[0][0][0], True)
-            pixels_per_metric = aruco_perimeter / 20
-        else:
-            pixels_per_metric = 38.0
+            aruco_found = find_aruco_markers(image, total_markers=50)
+            if len(aruco_found[0]) != 0:
+                aruco_perimeter = cv2.arcLength(aruco_found[0][0][0], True)
+                pixels_per_metric = aruco_perimeter / 20
+            else:
+                pixels_per_metric = 38.0
 
-        self.objects = []
-        for c in contours_find:
-            if cv2.contourArea(c) < 2000:
-                continue
+            self.objects = []
+            for c in contours_find:
+                if cv2.contourArea(c) < 2000:
+                    continue
 
-            box = cv2.minAreaRect(c)
-            box = cv2.boxPoints(box)
-            box = np.intp(box)
+                box = cv2.minAreaRect(c)
+                box = cv2.boxPoints(box)
+                box = np.intp(box)
 
-            m = cv2.moments(c)
-            c_x = int(m["m10"] / m["m00"])
-            c_y = int(m["m01"] / m["m00"])
+                m = cv2.moments(c)
+                c_x = int(m["m10"] / m["m00"])
+                c_y = int(m["m01"] / m["m00"])
 
-            (tl, tr, br, bl) = box
-            width_1 = (dist.euclidean(tr, tl))
-            height_1 = (dist.euclidean(bl, tl))
-            d_wd = width_1 / pixels_per_metric
-            d_ht = height_1 / pixels_per_metric
+                (tl, tr, br, bl) = box
+                width_1 = (dist.euclidean(tr, tl))
+                height_1 = (dist.euclidean(bl, tl))
+                d_wd = width_1 / pixels_per_metric
+                d_ht = height_1 / pixels_per_metric
 
-            self.objects.append({
-                "box": box,
-                "centroid": (c_x, c_y),
-                "width": d_wd,
-                "height": d_ht
-            })
-        self.is_analyzing = True
+                self.objects.append({
+                    "box": box,
+                    "centroid": (c_x, c_y),
+                    "width": d_wd,
+                    "height": d_ht
+                })
+            self.is_analyzing = True
 
     def draw_results(self, screen):
         for obj in self.objects:
@@ -118,3 +139,6 @@ class Measure(Module):
 
     def get_module_name(self):
         return 'Measure'
+
+    def isModuleFinished(self):
+        return self.module_finished

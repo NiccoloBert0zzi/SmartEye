@@ -22,13 +22,22 @@ class HandGestureController:
                     bottom_right_y - offset)
 
     @staticmethod
+    def is_touch_circle(finger, center, radius):
+        x, y = finger[1:]
+        return (x - center[0]) ** 2 + (y - center[1]) ** 2 <= radius ** 2
+
+    @staticmethod
     def check_if_hovering(fingers, buttons):
         if len(fingers) == 0:
             return False, None
 
         for index, button in enumerate(buttons):
-            if HandGestureController.is_touch_square(fingers[1], button["top_left"], button["bottom_right"]):
-                return True, index
+            if "top_left" in button and "bottom_right" in button:
+                if HandGestureController.is_touch_square(fingers[1], button["top_left"], button["bottom_right"]):
+                    return True, index
+            elif "center" in button and "radius" in button:
+                if HandGestureController.is_touch_circle(fingers[1], button["center"], button["radius"]):
+                    return True, index
         return False, None
 
     @staticmethod
@@ -37,7 +46,8 @@ class HandGestureController:
             return False, None
 
         if HandGestureController.is_touch(fingers[0], fingers[1]):
-            return HandGestureController.check_if_hovering(fingers, buttons)
+            hovering, index = HandGestureController.check_if_hovering(fingers, buttons)
+            return hovering, index
 
         return False, None
 

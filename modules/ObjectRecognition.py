@@ -13,8 +13,13 @@ class ObjectRecognition(Module):
         self.box_annotator = sv.BoundingBoxAnnotator(thickness=2)
         self.detections = None
         self.labels = None
+        self.detection_window = None
 
     def run(self, image_data, **kwargs):
+        # Load the image from the graphics folder
+        image_path = 'cani.jpg'
+        image_data = cv2.imread(image_path)
+
         result = self.model(image_data)[0]
         self.detections = sv.Detections.from_ultralytics(result)
         self.labels = [
@@ -52,6 +57,14 @@ class ObjectRecognition(Module):
 
             # Blit the annotated surface onto the screen
             screen.blit(annotated_surface, (0, 0))
+
+            # Display the annotated image in a new window
+            if self.detection_window is None:
+                self.detection_window = pygame.display.set_mode((annotated_image.shape[1], annotated_image.shape[0]), pygame.RESIZABLE)
+                pygame.display.set_caption('Detection Window')
+            self.detection_window.blit(annotated_surface, (0, 0))
+            pygame.display.update(self.detection_window.get_rect())
+
         return screen
 
     def destroy(self, **kwargs):
@@ -59,3 +72,6 @@ class ObjectRecognition(Module):
 
     def get_module_name(self):
         return 'Object Recognition'
+
+    def isModuleFinished(self):
+        return False

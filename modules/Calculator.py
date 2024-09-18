@@ -5,6 +5,7 @@ from controllers.HandGestureController import HandGestureController
 
 SCREEN_SIZE = (1920, 1080)
 LIGHT_BLUE = (173, 216, 230)
+RED = (255, 0, 0)  # Color for the menu button
 
 
 class Calculator(Module):
@@ -13,6 +14,7 @@ class Calculator(Module):
         self.height = SCREEN_SIZE[1]
         self.buttons = self.create_buttons()
         self.detector = detector
+        self.status = False
 
     def create_buttons(self):
         button_size = self.width // 18  # Fixed size for square buttons
@@ -56,19 +58,36 @@ class Calculator(Module):
             "text": "",
             "key": "result"
         })
+
+        # Add the menu button in the top-left corner
+        menu_button_center = (button_size // 2 + margin, button_size // 2 + margin)
+        buttons.append({
+            "center": menu_button_center,
+            "radius": button_size // 2,
+            "text": "Menu",
+            "key": "menu"
+        })
+
         return buttons
 
     def draw_calculator(self, screen):
         for button in self.buttons:
-            Geometry.draw_square_with_text(screen, button["top_left"], button["bottom_right"], button["text"],
-                                           font_color=LIGHT_BLUE)
+            if "radius" in button:
+                Geometry.draw_circle_with_text(screen, button["center"], button["radius"], button["text"],
+                                               font_color=LIGHT_BLUE)
+            else:
+                Geometry.draw_square_with_text(screen, button["top_left"], button["bottom_right"], button["text"],
+                                               font_color=LIGHT_BLUE)
 
     def run(self, img, **kwargs):
+        self.status = False
         fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
         clicking, click_index = HandGestureController.check_if_click(fingers, self.buttons)
         if clicking:
             if self.buttons[click_index]["key"] == "AC":
                 self.buttons[-1]["text"] = ""
+            elif self.buttons[click_index]["key"] == "menu":
+                self.status = True
             elif self.buttons[click_index]["key"] != "result":
                 # Append the value to the last button
                 self.buttons[-1]["text"] += self.buttons[click_index]["text"]
@@ -89,3 +108,6 @@ class Calculator(Module):
 
     def get_module_name(self):
         return 'Calculator'
+
+    def isModuleFinished(self):
+        return self.status

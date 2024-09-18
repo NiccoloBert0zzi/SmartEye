@@ -26,11 +26,10 @@ def calibrate_image(frame, width, height):
 
 
 def initialize_modules(manager, img, detector):
-
     manager.add_module(FingerDraw(img, detector))
     manager.add_module(ThermalScanner())
     manager.add_module(ObjectRecognition())
-    manager.add_module(Measure())
+    manager.add_module(Measure(detector))
     manager.add_module(Calculator(detector))
     manager.add_module(SpaceInvader(1920, 1080))
 
@@ -66,7 +65,8 @@ def main():
         if active_module:
             screen.fill((30, 30, 30))
             if (active_module.get_module_name() == 'Menu' or
-                    active_module.get_module_name() == 'SpaceInvader'):
+                    active_module.get_module_name() == 'SpaceInvader' or
+                    active_module.get_module_name() == 'ThermalScanner'):
                 index, text = active_module.run(img, fingers=fingers)
                 if index is not None:
                     active_module = manager.modules[index]
@@ -76,6 +76,9 @@ def main():
                 active_module.draw(img, screen)
             else:
                 active_module.draw(screen)
+
+            if active_module.isModuleFinished():
+                active_module = manager.modules[-1]
 
         # Draw fingers 8 and 4
         if fingers:

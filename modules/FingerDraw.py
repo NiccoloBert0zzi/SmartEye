@@ -1,5 +1,6 @@
 from modules.IModule import Module
 import pygame
+from controllers.HandGestureController import HandGestureController
 
 
 class FingerDraw(Module):
@@ -14,10 +15,13 @@ class FingerDraw(Module):
         self.color_buttons = [
             {"color": (255, 0, 255), "pos": (w // 2 - 120, 50), "radius": 20},  # Fuchsia
             {"color": (255, 255, 0), "pos": (w // 2, 50), "radius": 20},  # Yellow
-            {"color": (0, 255, 255), "pos": (w // 2 + 120, 50), "radius": 20}  # Cyan
+            {"color": (0, 255, 255), "pos": (w // 2 + 120, 50), "radius": 20},  # Cyan
         ]
+        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.module_finished = False
 
     def run(self, img, **kwargs):
+        self.module_finished = False
         img = self.detector.find_hands(img)
         n_fingers, index_fingers = self.detector.fingers_up()
 
@@ -41,6 +45,11 @@ class FingerDraw(Module):
         else:
             self.xp, self.yp = 0, 0  # Resetta la posizione se nessun dito o più di due dita sono alzate
 
+        fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
+        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
+        if clicking:
+            self.module_finished = True
+
     def draw(self, screen, **kwargs):
         for command in self.draw_commands:
             if command[0] == 'line':
@@ -54,6 +63,13 @@ class FingerDraw(Module):
         for button in self.color_buttons:
             pygame.draw.circle(screen, button["color"], button["pos"], button["radius"])
 
+        # Draw menu button
+        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
+        font = pygame.font.Font(None, 32)
+        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=self.menu_button["center"])
+        screen.blit(text_surface, text_rect)
+
         return screen
 
     def destroy(self, **kwargs):
@@ -61,3 +77,6 @@ class FingerDraw(Module):
 
     def get_module_name(self):
         return 'FingerDraw'
+
+    def isModuleFinished(self):
+        return self.module_finished

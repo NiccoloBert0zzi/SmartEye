@@ -68,3 +68,38 @@ class Geometry:
 
         # Draw the text
         Geometry.draw_text_centered(screen, top_left, bottom_right, text, font, font_size, font_color)
+
+    @staticmethod
+    def draw_circle_with_text(screen, center, radius, text, font_color=(255, 255, 255), circle_color=(20, 20, 40),
+                              border_color=(173, 216, 230), border_width=5):
+        # Draw the circle
+        pygame.draw.circle(screen, circle_color, center, radius)
+        pygame.draw.circle(screen, border_color, center, radius, border_width)
+
+        # Render the text
+        font = pygame.font.Font(None, 32)
+        text_surface = font.render(text, True, font_color)
+        text_rect = text_surface.get_rect(center=center)
+
+        # Check if text width is greater than the circle diameter
+        if text_rect.width > 2 * radius:
+            words = text.split()
+            lines = []
+            current_line = words[0]
+            for word in words[1:]:
+                test_line = current_line + ' ' + word
+                test_surface = font.render(test_line, True, font_color)
+                if test_surface.get_width() <= 2 * radius:
+                    current_line = test_line
+                else:
+                    lines.append(current_line)
+                    current_line = word
+            lines.append(current_line)
+
+            # Draw each line of text
+            for i, line in enumerate(lines):
+                line_surface = font.render(line, True, font_color)
+                line_rect = line_surface.get_rect(center=(center[0], center[1] - (len(lines) - 1) * 16 + i * 32))
+                screen.blit(line_surface, line_rect)
+        else:
+            screen.blit(text_surface, text_rect)

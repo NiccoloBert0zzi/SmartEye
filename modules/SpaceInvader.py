@@ -7,6 +7,7 @@ from random import choice, randint
 from data.entities import Laser
 from geometry.Geometry import Geometry
 from modules.IModule import Module
+from controllers.HandGestureController import HandGestureController
 
 
 class SpaceInvader(Module):
@@ -64,6 +65,8 @@ class SpaceInvader(Module):
 
         # Initialize buttons
         self.buttons = self.create_buttons()
+        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.module_finished = False
 
     def create_buttons(self):
         button_width = 150
@@ -190,6 +193,7 @@ class SpaceInvader(Module):
             screen.blit(victory_surf, victory_rect)
 
     def run(self, image_data, **kwargs):
+        self.module_finished = False
         fingers = kwargs.get('fingers', [])
         if not self.alien_laser_initialized:
             self.music.play(loops=-1)
@@ -207,12 +211,24 @@ class SpaceInvader(Module):
         self.alien_position_checker()
         self.collision_checks()
 
+        # Check if menu button is clicked
+        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
+        if clicking:
+            self.module_finished = True
+
     def draw_buttons(self, screen):
         for button in self.buttons:
             Geometry.draw_square_with_text(screen,
                                            button["top_left"],
                                            button["bottom_right"],
                                            button["text"])
+
+        # Draw menu button
+        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
+        font = pygame.font.Font(None, 32)
+        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=self.menu_button["center"])
+        screen.blit(text_surface, text_rect)
 
     def draw(self, screen, **kwargs):
         self.player.sprite.lasers.draw(screen)
@@ -232,6 +248,9 @@ class SpaceInvader(Module):
 
     def get_module_name(self):
         return 'Space Invader'
+
+    def isModuleFinished(self):
+        return self.module_finished
 
 
 class CRT:

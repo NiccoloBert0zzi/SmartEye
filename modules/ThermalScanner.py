@@ -2,6 +2,7 @@ from modules.IModule import Module
 import numpy as np
 import cv2
 import pygame
+from controllers.HandGestureController import HandGestureController
 
 
 def convert_to_gray8(gray16_image):
@@ -15,12 +16,20 @@ class ThermalScanner(Module):
         self.img = None
         self.gray8_image = None
         self.gray16_image = None
+        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.module_finished = False
 
     def run(self, image_data, **kwargs):
+        self.module_finished = False
         palette = kwargs.get('palette', '')
         self.gray16_image = image_data
         self.gray8_image = convert_to_gray8(self.gray16_image)
         self.img = self.apply_palette(palette)
+
+        fingers = kwargs.get('fingers', [])
+        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
+        if clicking:
+            self.module_finished = True
 
     def draw(self, screen, **kwargs):
         if self.img is None:
@@ -35,6 +44,14 @@ class ThermalScanner(Module):
 
         # Blit the Pygame surface onto the screen
         screen.blit(img_surface, (0, 0))
+
+        # Draw menu button
+        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
+        font = pygame.font.Font(None, 32)
+        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=self.menu_button["center"])
+        screen.blit(text_surface, text_rect)
+
         return screen
 
     def destroy(self, **kwargs):
@@ -52,3 +69,6 @@ class ThermalScanner(Module):
 
     def get_module_name(self):
         return 'Thermal Scanner'
+
+    def isModuleFinished(self):
+        return self.module_finished

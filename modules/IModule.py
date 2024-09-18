@@ -17,3 +17,7 @@ class Module(ABC):
     @abstractmethod
     def get_module_name(self):
         pass
+
+    @abstractmethod
+    def isModuleFinished(self):
+        pass
