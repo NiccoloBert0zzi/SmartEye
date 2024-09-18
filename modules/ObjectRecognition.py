@@ -9,49 +9,48 @@ import supervision as sv
 class ObjectRecognition(Module):
     def __init__(self):
         super().__init__()
-        self.model = YOLO('yolov8n.pt')
-        self.box_annotator = sv.BoundingBoxAnnotator(thickness=2)
+        self.model = YOLO('yolov8l.pt')
         self.detections = None
         self.labels = None
+        self.filtered_detections = None
+        self.cap = cv2.VideoCapture(0)
 
     def run(self, image_data, **kwargs):
-        result = self.model(image_data)[0]
-        self.detections = sv.Detections.from_ultralytics(result)
-        self.labels = [
-            result.names[class_id]
-            for class_id
-            in self.detections.class_id
+        _, img = self.cap.read()
+
+        result = self.model(img, agnostic_nms=True)[0]
+        self.detections = sv.Detections.from_yolov8(result)
+        self.filtered_detections = [
+            detection
+            for detection
+            in self.detections
+            if detection[1] > 0.65
         ]
-        # Debug: Print the detections and labels
-        print("Detections:", self.detections)
-        print("Labels:", self.labels)
 
-    def draw(self, img, screen, **kwargs):
+    def draw(self, screen, **kwargs):
+        cap = cv2.VideoCapture(0)
+        _, img = cap.read()
+
+        result = self.model(img, agnostic_nms=True)[0]
+        self.detections = sv.Detections.from_yolov8(result)
+        self.filtered_detections = [
+            detection
+            for detection
+            in self.detections
+            if detection[1] > 0.65
+        ]
+
         if self.detections is not None:
-            # Convert image to NumPy array
-            img_array = np.array(img)
-            img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-
-            # Annotate the image using the bounding box annotator
-            annotated_image = self.box_annotator.annotate(
-                scene=img_array,
-                detections=self.detections
-            )
-
-            # Annotate the image using the label annotator
-            label_annotator = sv.LabelAnnotator()
-            annotated_image = label_annotator.annotate(
-                scene=annotated_image,
-                detections=self.detections,
-                labels=self.labels
-            )
-
-            # Convert the annotated image back to Pygame Surface
-            annotated_image = cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB)
-            annotated_surface = pygame.surfarray.make_surface(annotated_image)
-
-            # Blit the annotated surface onto the screen
-            screen.blit(annotated_surface, (0, 0))
+            for detection in self.filtered_detections:
+                x1, y1, x2, y2 = detection[0]
+                confidence = detection[1]
+                class_id = detection[2]
+                label = f"{self.model.model.names[class_id]} {confidence:.2f}"
+                rect = pygame.Rect(int(x1), int(y1), int(x2 - x1), int(y2 - y1))
+                pygame.draw.rect(screen, (255, 0, 0), rect, 2)
+                font = pygame.font.Font(None, 24)
+                text = font.render(label, True, (255, 0, 0))
+                screen.blit(text, (int(x1), int(y1) - 20))
         return screen
 
     def destroy(self, **kwargs):

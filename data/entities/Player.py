@@ -21,20 +21,17 @@ class Player(pygame.sprite.Sprite):
         self.laser_sound.set_volume(0.5)
 
     def get_input(self, fingers):
-        if not fingers:
-            return None, None
-        hand_position = HandGestureController.get_hand_position(fingers)
-        if hand_position:
-            hand_x = hand_position[0]
-            if hand_x < self.rect.centerx - self.speed:
-                self.rect.x -= self.speed
-            elif hand_x > self.rect.centerx + self.speed:
-                self.rect.x += self.speed
-            if HandGestureController.check_if_shoot(fingers) and self.ready:
-                self.shoot_laser()
-                self.ready = False
-                self.laser_time = pygame.time.get_ticks()
-                self.laser_sound.play()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            self.rect.x -= self.speed
+        if keys[pygame.K_RIGHT]:
+            self.rect.x += self.speed
+
+        if len(fingers) >= 2 and HandGestureController.is_touch(fingers[0], fingers[1]) and self.ready:
+            self.shoot_laser()
+            self.ready = False
+            self.laser_time = pygame.time.get_ticks()
+            self.laser_sound.play()
 
     def recharge(self):
         if not self.ready:

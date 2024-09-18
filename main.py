@@ -41,7 +41,7 @@ def initialize_modules(manager, img, detector):
 
 
 def main():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     _, img = cap.read()
     img = calibrate_image(img, 1920, 1080)
     pygame.display.set_caption("SmartEye")
@@ -65,17 +65,15 @@ def main():
 
         if active_module:
             screen.fill((30, 30, 30))
-            if (active_module.get_module_name() == 'Menu' or
-                    active_module.get_module_name() == 'SpaceInvader'):
+            if active_module.get_module_name() == 'Menu':
                 index, text = active_module.run(img, fingers=fingers)
                 if index is not None:
                     active_module = manager.modules[index]
+            elif active_module.get_module_name() == 'Space Invader':
+                active_module.run(img, fingers=fingers)
             else:
                 active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
-            if active_module.get_module_name() == 'Object Recognition':
-                active_module.draw(img, screen)
-            else:
-                active_module.draw(screen)
+            active_module.draw(screen)
 
         # Draw fingers 8 and 4
         if fingers:
