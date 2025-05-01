@@ -22,7 +22,7 @@ class Menu(Module):
             if HandGestureController.is_finger_touching_circle(fingers, circle):
                 if circle.click_start_time is None:
                     circle.click_start_time = time.time()
-                elif time.time() - circle.click_start_time >= 2:
+                elif time.time() - circle.click_start_time >= 0.5:
                     return index, circle.text
             else:
                 circle.click_start_time = None

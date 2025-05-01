@@ -21,8 +21,8 @@ M = np.load("calibration/M.npy")
 def calibrate_image(frame, width, height):
     warped_image = cv2.warpPerspective(frame, M, (width, height))
 
-    flipped_image = cv2.flip(warped_image, -1)
-    return flipped_image
+    # flipped_image = cv2.flip(warped_image, -1)
+    return warped_image
 
 
 def initialize_modules(manager, img, detector):
@@ -50,6 +50,8 @@ def main():
 
     active_module = initialize_modules(manager, img, detector)
 
+    #active_module = hardActivate(manager.modules)
+
     # Set up a clock to limit the frame rate
     clock = pygame.time.Clock()
 
@@ -64,12 +66,12 @@ def main():
 
         if active_module:
             screen.fill((30, 30, 30))
-            if (active_module.get_module_name() == 'Menu' or
-                    active_module.get_module_name() == 'SpaceInvader' or
-                    active_module.get_module_name() == 'ThermalScanner'):
+            if active_module.get_module_name() == 'Menu':
                 index, text = active_module.run(img, fingers=fingers)
                 if index is not None:
                     active_module = manager.modules[index]
+            elif active_module.get_module_name() == 'Space Invader':
+                active_module.run(img, fingers=fingers)
             else:
                 active_module.run(img, palette='jet' if active_module == manager.modules[1] else None)
             if active_module.get_module_name() == 'Object Recognition':
@@ -77,16 +79,16 @@ def main():
             else:
                 active_module.draw(screen)
 
-            if active_module.isModuleFinished():
-                active_module = manager.modules[-1]
-
         # Draw fingers 8 and 4
         if fingers:
             HandTrackingModule.draw_fingers(screen, fingers, draw_line=True, draw_center=True)
 
+        if active_module.isModuleFinished():
+            active_module = manager.modules[-1]
+
         # Flip the screen content horizontally before displaying
-        flipped_screen = pygame.transform.flip(screen, True, True)
-        pygame.display.get_surface().blit(flipped_screen, (0, 0))
+        # flipped_screen = pygame.transform.flip(screen, True, True)
+        # pygame.display.get_surface().blit(flipped_screen, (0, 0))
 
         # Display the Pygame window
         pygame.display.update()
@@ -98,6 +100,12 @@ def main():
     pygame.quit()
     cap.release()
     cv2.destroyAllWindows()
+
+
+def hardActivate(modules):
+    for module in modules:
+        if module.get_module_name() == 'Measure':
+            return module
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from geometry.AppCirlce import AppCircle
 from modules.IModule import Module
 import pygame
 from controllers.HandGestureController import HandGestureController
@@ -17,7 +18,7 @@ class FingerDraw(Module):
             {"color": (255, 255, 0), "pos": (w // 2, 50), "radius": 20},  # Yellow
             {"color": (0, 255, 255), "pos": (w // 2 + 120, 50), "radius": 20},  # Cyan
         ]
-        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.menu_circle = AppCircle((80, 80), 80, "Menu", (80, 80), is_visible=True)
         self.module_finished = False
 
     def run(self, img, **kwargs):
@@ -46,8 +47,7 @@ class FingerDraw(Module):
             self.xp, self.yp = 0, 0  # Resetta la posizione se nessun dito o più di due dita sono alzate
 
         fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
-        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
-        if clicking:
+        if HandGestureController.is_finger_touching_circle(fingers, self.menu_circle):
             self.module_finished = True
 
     def draw(self, screen, **kwargs):
@@ -63,12 +63,8 @@ class FingerDraw(Module):
         for button in self.color_buttons:
             pygame.draw.circle(screen, button["color"], button["pos"], button["radius"])
 
-        # Draw menu button
-        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
-        font = pygame.font.Font(None, 32)
-        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=self.menu_button["center"])
-        screen.blit(text_surface, text_rect)
+        # Draw menu circle
+        self.menu_circle.draw(screen)
 
         return screen
 

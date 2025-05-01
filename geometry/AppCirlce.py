@@ -2,6 +2,7 @@ import time
 import pygame
 from data.Constants import SCREEN_SIZE, NAVY_BLUE, LIGHT_BLUE
 
+
 class AppCircle:
     def __init__(self, center, radius, app_name, final_pos, is_main=False, is_visible=False):
         self.center = center

@@ -5,6 +5,7 @@ from imutils import contours
 import cv2
 import pygame
 
+from geometry.AppCirlce import AppCircle
 from modules.IModule import Module
 from controllers.HandGestureController import HandGestureController
 
@@ -15,7 +16,8 @@ def find_aruco_markers(img, marker_size=5, total_markers=50):
     key = getattr(cv2.aruco, f'DICT_{marker_size}X{marker_size}_{total_markers}')
     aruco_dict = cv2.aruco.getPredefinedDictionary(key)
     aruco_param = cv2.aruco.DetectorParameters()
-    bbox, ids, rejected = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_param)
+    detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_param)
+    bbox, ids, rejected = detector.detectMarkers(gray)
 
     return bbox, ids, rejected
 
@@ -24,7 +26,7 @@ class Measure(Module):
     def __init__(self, detector):
         self.objects = []
         self.is_analyzing = False
-        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
+        self.menu_circle = AppCircle((80, 80), 80, "Menu", (80, 80), is_visible=True)
         self.module_finished = False
         self.detector = detector
 
@@ -33,8 +35,7 @@ class Measure(Module):
         img = self.detector.find_hands(img)
 
         fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
-        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
-        if clicking:
+        if HandGestureController.is_finger_touching_circle(fingers, self.menu_circle):
             self.module_finished = True
 
         self.analyze_image(img)
@@ -42,12 +43,8 @@ class Measure(Module):
     def draw(self, screen, **kwargs):
         self.draw_results(screen)
 
-        # Draw menu button
-        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
-        font = pygame.font.Font(None, 32)
-        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=self.menu_button["center"])
-        screen.blit(text_surface, text_rect)
+        # Draw menu circle
+        self.menu_circle.draw(screen)
 
         return screen
 
@@ -60,7 +57,10 @@ class Measure(Module):
         img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img_gray = cv2.GaussianBlur(img_gray, (7, 7), 0)
 
-        edged = cv2.Canny(img_gray, 50, 100)
+        # Use adaptive thresholding instead of fixed thresholding
+        img_thresh = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+        edged = cv2.Canny(img_thresh, 50, 150)  # Adjust the thresholds for better edge detection
         edged = cv2.dilate(edged, None, iterations=1)
         edged = cv2.erode(edged, None, iterations=1)
 
@@ -81,26 +81,29 @@ class Measure(Module):
                 if cv2.contourArea(c) < 2000:
                     continue
 
-                box = cv2.minAreaRect(c)
-                box = cv2.boxPoints(box)
+                # Filter contours by shape (e.g., aspect ratio, extent)
+                rect = cv2.minAreaRect(c)
+                box = cv2.boxPoints(rect)
                 box = np.intp(box)
+                width = dist.euclidean(box[0], box[1])
+                height = dist.euclidean(box[1], box[2])
+                aspect_ratio = width / height if height != 0 else 0
+                extent = cv2.contourArea(c) / (width * height) if width * height != 0 else 0
 
-                m = cv2.moments(c)
-                c_x = int(m["m10"] / m["m00"])
-                c_y = int(m["m01"] / m["m00"])
+                if 0.8 < aspect_ratio < 1.2 and extent > 0.5:  # Example criteria for filtering
+                    m = cv2.moments(c)
+                    c_x = int(m["m10"] / m["m00"])
+                    c_y = int(m["m01"] / m["m00"])
 
-                (tl, tr, br, bl) = box
-                width_1 = (dist.euclidean(tr, tl))
-                height_1 = (dist.euclidean(bl, tl))
-                d_wd = width_1 / pixels_per_metric
-                d_ht = height_1 / pixels_per_metric
+                    d_wd = width / pixels_per_metric
+                    d_ht = height / pixels_per_metric
 
-                self.objects.append({
-                    "box": box,
-                    "centroid": (c_x, c_y),
-                    "width": d_wd,
-                    "height": d_ht
-                })
+                    self.objects.append({
+                        "box": box,
+                        "centroid": (c_x, c_y),
+                        "width": d_wd,
+                        "height": d_ht
+                    })
             self.is_analyzing = True
 
     def draw_results(self, screen):

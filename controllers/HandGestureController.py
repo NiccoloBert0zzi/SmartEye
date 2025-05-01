@@ -53,6 +53,8 @@ class HandGestureController:
 
     @staticmethod
     def is_finger_touching_circle(fingers, circle):
+        if len(fingers) == 0:
+            return False
         finger1, finger2 = fingers
         if HandGestureController.is_touch(finger1, finger2):
             finger1_x, finger1_y = finger1[1:]

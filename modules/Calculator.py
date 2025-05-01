@@ -1,6 +1,8 @@
+import time
+
+from geometry.AppCirlce import AppCircle
 from modules.IModule import Module
 from geometry.Geometry import Geometry
-
 from controllers.HandGestureController import HandGestureController
 
 SCREEN_SIZE = (1920, 1080)
@@ -12,9 +14,11 @@ class Calculator(Module):
     def __init__(self, detector):
         self.width = SCREEN_SIZE[0]
         self.height = SCREEN_SIZE[1]
+        self.circles = []
         self.buttons = self.create_buttons()
         self.detector = detector
         self.status = False
+        self.last_click_time = 0  # Initialize the last click time
 
     def create_buttons(self):
         button_size = self.width // 18  # Fixed size for square buttons
@@ -43,12 +47,13 @@ class Calculator(Module):
                 bottom_right = (
                     start_x + (j + 1) * button_size + j * margin, start_y + (i + 1) * button_size + i * margin)
                 text = buttons_text[i][j]
+                key = "result" if text == "=" else text  # Set key to "result" for "=" button
                 # Add the button to the list
                 buttons.append({
                     "top_left": top_left,
                     "bottom_right": bottom_right,
                     "text": text,
-                    "key": text
+                    "key": key
                 })
         rectangle_top_left = (start_x, start_y - button_size - margin)
         rectangle_bottom_right = (start_x + total_grid_width, start_y - margin)
@@ -61,43 +66,42 @@ class Calculator(Module):
 
         # Add the menu button in the top-left corner
         menu_button_center = (button_size // 2 + margin, button_size // 2 + margin)
-        buttons.append({
-            "center": menu_button_center,
-            "radius": button_size // 2,
-            "text": "Menu",
-            "key": "menu"
-        })
+        self.circles.append(
+            AppCircle(menu_button_center, 80, "Menu", menu_button_center, is_visible=True))
 
         return buttons
 
     def draw_calculator(self, screen):
         for button in self.buttons:
-            if "radius" in button:
-                Geometry.draw_circle_with_text(screen, button["center"], button["radius"], button["text"],
-                                               font_color=LIGHT_BLUE)
-            else:
-                Geometry.draw_square_with_text(screen, button["top_left"], button["bottom_right"], button["text"],
-                                               font_color=LIGHT_BLUE)
+            Geometry.draw_square_with_text(screen, button["top_left"], button["bottom_right"], button["text"],
+                                           font_color=LIGHT_BLUE)
+        for circle in self.circles:
+            circle.draw(screen)
 
     def run(self, img, **kwargs):
         self.status = False
         fingers = self.detector.find_all_positions(img, fingers=[(8, True), (4, True)])
-        clicking, click_index = HandGestureController.check_if_click(fingers, self.buttons)
-        if clicking:
-            if self.buttons[click_index]["key"] == "AC":
-                self.buttons[-1]["text"] = ""
-            elif self.buttons[click_index]["key"] == "menu":
+        current_time = time.time()
+        if current_time - self.last_click_time >= 1:  # Check if 1 second has passed since the last click
+            clicking, click_index = HandGestureController.check_if_click(fingers, self.buttons)
+            if clicking:
+                self.last_click_time = current_time  # Update the last click time
+                if self.buttons[click_index]["key"] == "AC":
+                    self.buttons[-1]["text"] = ""
+                elif self.buttons[click_index]["key"] != "result":
+                    # Append the value to the last button
+                    self.buttons[-1]["text"] += self.buttons[click_index]["text"]
+                else:
+                    # Calculate the result
+                    try:
+                        # Evaluate only if the expression is valid
+                        self.buttons[-1]["text"] = str(eval(self.buttons[-1]["text"]))
+                    except (SyntaxError, ZeroDivisionError, NameError):
+                        self.buttons[-1]["text"] = "Error"
+        for circle in self.circles:
+            if HandGestureController.is_finger_touching_circle(fingers, circle):
                 self.status = True
-            elif self.buttons[click_index]["key"] != "result":
-                # Append the value to the last button
-                self.buttons[-1]["text"] += self.buttons[click_index]["text"]
-            else:
-                # Calculate the result
-                try:
-                    # Evaluate only if the expression is valid
-                    self.buttons[-1]["text"] = str(eval(self.buttons[-1]["text"]))
-                except (SyntaxError, ZeroDivisionError, NameError):
-                    self.buttons[-1]["text"] = "Error"
+                break
 
     def draw(self, screen, **kwargs):
         self.draw_calculator(screen)

@@ -1,17 +1,19 @@
 import pygame
 import sys
+
+from controllers.HandGestureController import HandGestureController
 from data.entities import Player
 import data.entities.Obstacle as Obstacle
 from data.entities import Alien
 from random import choice, randint
 from data.entities import Laser
-from geometry.Geometry import Geometry
+from geometry.AppCirlce import AppCircle
 from modules.IModule import Module
-from controllers.HandGestureController import HandGestureController
 
 
 class SpaceInvader(Module):
     def __init__(self, width, height):
+        self.module_finished = None
         margin_percentage = 0.3  # 10% margin on each side
         self.screen_original_width = width
         self.screen_width = width * (1 - 2 * margin_percentage)
@@ -63,31 +65,8 @@ class SpaceInvader(Module):
         # CRT
         self.crt = CRT(width, height)
 
-        # Initialize buttons
-        self.buttons = self.create_buttons()
-        self.menu_button = {"center": (50, 50), "radius": 40, "text": "menu", "key": "menu"}
-        self.module_finished = False
-
-    def create_buttons(self):
-        button_width = 150
-        button_height = 70
-        margin = 30
-
-        vertical_center = (self.screen_height - button_height) // 2
-
-        # Calculate horizontal center position for the left and right buttons
-        lateral_space = (self.screen_original_width - self.screen_width) // 2
-        horizontal_center_left = (lateral_space - button_width) // 2
-
-        buttons = [
-            {
-                "top_left": (horizontal_center_left, vertical_center),
-                "bottom_right": (horizontal_center_left + button_width, vertical_center + button_height),
-                "text": "Spara",
-                "key": "shoot"
-            }
-        ]
-        return buttons
+        # Menu Circle
+        self.menu_circle = AppCircle((80, 80), 80, "Menu", (80, 80), is_visible=True)
 
     def create_obstacle(self, x_start, y_start, offset_x):
         for row_index, row in enumerate(self.shape):
@@ -193,8 +172,8 @@ class SpaceInvader(Module):
             screen.blit(victory_surf, victory_rect)
 
     def run(self, image_data, **kwargs):
-        self.module_finished = False
         fingers = kwargs.get('fingers', [])
+        self.module_finished = False
         if not self.alien_laser_initialized:
             self.music.play(loops=-1)
             pygame.time.set_timer(self.alien_laser_event, 1000)
@@ -211,24 +190,8 @@ class SpaceInvader(Module):
         self.alien_position_checker()
         self.collision_checks()
 
-        # Check if menu button is clicked
-        clicking, click_index = HandGestureController.check_if_click(fingers, [self.menu_button])
-        if clicking:
+        if HandGestureController.is_finger_touching_circle(fingers, self.menu_circle):
             self.module_finished = True
-
-    def draw_buttons(self, screen):
-        for button in self.buttons:
-            Geometry.draw_square_with_text(screen,
-                                           button["top_left"],
-                                           button["bottom_right"],
-                                           button["text"])
-
-        # Draw menu button
-        pygame.draw.circle(screen, (255, 0, 0), self.menu_button["center"], self.menu_button["radius"])
-        font = pygame.font.Font(None, 32)
-        text_surface = font.render(self.menu_button["text"], True, (255, 255, 255))
-        text_rect = text_surface.get_rect(center=self.menu_button["center"])
-        screen.blit(text_surface, text_rect)
 
     def draw(self, screen, **kwargs):
         self.player.sprite.lasers.draw(screen)
@@ -239,7 +202,9 @@ class SpaceInvader(Module):
         self.display_lives(screen)
         self.display_score(screen)
         self.check_victory(screen)
-        self.draw_buttons(screen)
+
+        # Draw menu circle
+        self.menu_circle.draw(screen)
 
         self.crt.draw(screen)
 
